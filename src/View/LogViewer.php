@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Snawbar\LogViewer\View;
 
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ViewErrorBag;
 use Snawbar\LogViewer\DataObjects\LogEntry;
 
@@ -49,7 +49,7 @@ class LogViewer
             'url' => $this->url(['file' => $file['name'], 'search' => NULL, 'level' => NULL, 'page' => NULL]),
             'active' => $file['name'] === $this->currentFile,
             'size' => $this->formatBytes($file['size']),
-            'modified' => Date::createFromTimestamp($file['modified'])->diffForHumans(['short' => TRUE]),
+            'modified' => $this->timeAgo($file['modified'], short: TRUE),
         ], $this->files);
     }
 
@@ -80,7 +80,7 @@ class LogViewer
                 return sprintf(
                     '%s · updated %s',
                     $this->formatBytes($file['size']),
-                    Date::createFromTimestamp($file['modified'])->diffForHumans(),
+                    $this->timeAgo($file['modified']),
                 );
             }
         }
@@ -263,6 +263,16 @@ class LogViewer
     public function json(mixed $value): string
     {
         return Highlighter::json($value);
+    }
+
+    /**
+     * Always English, whatever locale the host app uses.
+     */
+    protected function timeAgo(int $timestamp, bool $short = FALSE): string
+    {
+        return Date::createFromTimestamp($timestamp)
+            ->locale('en')
+            ->diffForHumans(['short' => $short]);
     }
 
     protected function formatBytes(int $bytes): string

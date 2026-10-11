@@ -9,7 +9,7 @@
     <link
         rel="icon"
         type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%23249658'/%3E%3Cg fill='%23fff'%3E%3Crect x='136' y='150' width='240' height='44' rx='22'/%3E%3Crect x='136' y='234' width='176' height='44' rx='22'/%3E%3Crect x='136' y='318' width='208' height='44' rx='22'/%3E%3C/g%3E%3C/svg%3E"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='20 20 472 472'%3E%3Crect x='20' y='20' width='472' height='472' rx='42' fill='%23249658'/%3E%3Cg fill='%23fff'%3E%3Crect x='154' y='154' width='92' height='92' rx='10'/%3E%3Crect x='266' y='154' width='92' height='92' rx='10'/%3E%3Crect x='154' y='266' width='92' height='92' rx='10'/%3E%3Crect x='266' y='266' width='92' height='92' rx='10'/%3E%3C/g%3E%3C/svg%3E"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,7 +23,7 @@
             --surface: #fff;
             --subtle: #f4f4f5;
             --border: #e4e4e7;
-            --border-strong: #d4d4d8;
+            --border-strong: #161630;
             --text: #18181b;
             --text-soft: #3f3f46;
             --muted: #71717a;
@@ -51,6 +51,7 @@
 
             --sidebar-w: 272px;
             --topbar-h: 60px;
+            --brand-line: #bbf7d0;
             --radius: 10px;
             --radius-sm: 6px;
             --shadow: 0 1px 2px rgba(24, 24, 27, .04), 0 1px 3px rgba(24, 24, 27, .06);
@@ -128,11 +129,12 @@
         .layout {
             display: grid;
             grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+            align-items: start;
             min-height: 100vh;
             min-height: 100dvh;
         }
 
-        /* Sidebar */
+        /* Sidebar: full height, light, with a border on the content side. */
         .sidebar {
             position: sticky;
             top: 0;
@@ -140,6 +142,7 @@
             flex-direction: column;
             height: 100vh;
             height: 100dvh;
+            overflow: hidden;
             background: var(--surface);
             border-right: 1px solid var(--border);
         }
@@ -166,8 +169,9 @@
         .sidebar__head {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
-            padding: 16px 18px 8px;
+            padding: 18px 18px 10px;
         }
 
         .sidebar__title {
@@ -196,52 +200,65 @@
         }
 
         .files {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
             flex: 1;
             min-height: 0;
             overflow-y: auto;
             overscroll-behavior: contain;
-            padding: 0 10px 16px;
+            padding: 4px 14px 16px;
+            scrollbar-width: thin;
         }
 
+        /* Each file is a small card: icon tile, name, then size and age. */
         .file {
-            position: relative;
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 10px;
-            margin-bottom: 2px;
-            border-radius: var(--radius-sm);
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow);
             color: var(--text-soft);
-            transition: background-color .15s, color .15s;
+            transition: background-color .15s, border-color .15s, box-shadow .15s, color .15s;
         }
 
         .file:hover {
-            background: var(--subtle);
+            border-color: #d4d4d8;
+            background: var(--bg);
             color: var(--text);
         }
 
         .file.is-active {
+            border-color: var(--brand);
             background: var(--brand-bg);
+            box-shadow: 0 0 0 3px rgba(36, 150, 88, .12);
             color: var(--text);
         }
 
-        .file.is-active::before {
-            content: '';
-            position: absolute;
-            top: 8px;
-            bottom: 8px;
-            left: 0;
-            width: 3px;
-            border-radius: 3px;
+        .file__icon {
+            display: grid;
+            flex-shrink: 0;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--muted);
+        }
+
+        .file.is-active .file__icon {
+            border-color: var(--brand);
             background: var(--brand);
+            color: #fff;
         }
 
-        .file .i {
-            color: var(--faint);
-        }
-
-        .file.is-active .i {
-            color: var(--brand);
+        .file__icon .i {
+            width: 16px;
+            height: 16px;
         }
 
         .file__body {
@@ -260,9 +277,23 @@
         }
 
         .file__meta {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
             color: var(--faint);
             font-size: 11.5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .file__meta .dot {
+            width: 3px;
+            height: 3px;
+            background: var(--border-strong);
+        }
+
+        .file.is-active .file__meta {
+            color: var(--muted);
         }
 
         .sidebar__empty {
@@ -278,11 +309,12 @@
             min-width: 0;
         }
 
+        /* Top bar: full width, light, with a border underneath (lines up with the brand row). */
         .topbar {
             position: sticky;
             top: 0;
             z-index: 20;
-            background: rgba(255, 255, 255, .85);
+            background: rgba(255, 255, 255, .92);
             border-bottom: 1px solid var(--border);
             backdrop-filter: saturate(180%) blur(8px);
             -webkit-backdrop-filter: saturate(180%) blur(8px);
@@ -292,7 +324,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            min-height: var(--topbar-h);
+            min-height: calc(var(--topbar-h) - 1px); /* + 1px border = same height as the brand row */
             padding: 0 24px;
         }
 
@@ -649,23 +681,50 @@
         }
 
         .list {
-            overflow: hidden;
-        }
-
-        .list > * + * {
-            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         /* Entry */
+        .entry {
+            overflow: hidden;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+        .entry:hover {
+            border-color: #d4d4d8;
+        }
+
+        .entry[open] {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(36, 150, 88, .12);
+        }
+
+        /* No browser focus ring around a clicked/tapped card; keyboard focus gets a soft brand ring. */
+        .entry > summary:focus,
+        .entry > summary:focus-visible {
+            outline: none;
+        }
+
+        .entry:has(> summary:focus-visible) {
+            border-color: var(--brand-line);
+            box-shadow: 0 0 0 3px rgba(36, 150, 88, .12);
+        }
+
         .entry > summary {
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            padding: 12px 12px 12px 16px;
+            padding: 14px 14px 14px 16px;
             list-style: none;
             cursor: pointer;
-            box-shadow: inset 3px 0 0 var(--tone);
             transition: background-color .15s;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .entry > summary::-webkit-details-marker {
@@ -747,7 +806,6 @@
             font-weight: 500;
             line-height: 1.55;
             overflow-wrap: anywhere;
-            white-space: pre-line;
             -webkit-box-orient: vertical;
             -webkit-line-clamp: 2;
         }
@@ -811,8 +869,8 @@
 
         /* Entry detail */
         .detail {
-            padding: 4px 16px 16px 19px;
-            box-shadow: inset 3px 0 0 var(--tone);
+            padding: 14px 16px 16px;
+            border-top: 1px solid var(--border);
             background: #fcfcfd;
         }
 
@@ -1112,7 +1170,7 @@
             }
 
             .detail {
-                padding: 4px 12px 14px 15px;
+                padding: 12px 12px 14px;
             }
 
             .tag__value {
@@ -1132,12 +1190,13 @@
 
 <body>
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-        <symbol id="i-app" viewBox="0 0 512 512">
-            <rect width="512" height="512" rx="96" fill="#249658" />
+        <symbol id="i-app" viewBox="20 20 472 472">
+            <rect x="20" y="20" width="472" height="472" rx="42" fill="#249658" />
             <g fill="#fff">
-                <rect x="136" y="150" width="240" height="44" rx="22" />
-                <rect x="136" y="234" width="176" height="44" rx="22" />
-                <rect x="136" y="318" width="208" height="44" rx="22" />
+                <rect x="154" y="154" width="92" height="92" rx="10" />
+                <rect x="266" y="154" width="92" height="92" rx="10" />
+                <rect x="154" y="266" width="92" height="92" rx="10" />
+                <rect x="266" y="266" width="92" height="92" rx="10" />
             </g>
         </symbol>
         <symbol id="i-file" viewBox="0 0 24 24">
@@ -1242,10 +1301,12 @@
                         title="{{ $file['name'] }}"
                         @if ($file['active']) aria-current="page" @endif
                     >
-                        <svg class="i"><use href="#i-file" /></svg>
+                        <span class="file__icon"
+                            ><svg class="i"><use href="#i-file" /></svg
+                        ></span>
                         <span class="file__body">
                             <span class="file__name">{{ $file['name'] }}</span>
-                            <span class="file__meta">{{ $file['size'] }} · {{ $file['modified'] }}</span>
+                            <span class="file__meta">{{ $file['size'] }}<span class="dot"></span>{{ $file['modified'] }}</span>
                         </span>
                     </a>
                 @empty
@@ -1375,7 +1436,7 @@
                     </div>
                 @endif
 
-                <div class="card list">
+                <div class="list">
                     @forelse ($logViewer->entries() as $index => $entry)
                         @php($tone = $entry->levelGroup())
                         <details class="entry tone-{{ $tone }}" id="entry-{{ $index }}">
@@ -1533,7 +1594,7 @@
                         </details>
                     @empty
                         @php($empty = $logViewer->emptyState())
-                        <div class="empty">
+                        <div class="card empty">
                             <span class="empty__icon"
                                 ><svg class="i"><use href="#i-inbox" /></svg
                             ></span>
