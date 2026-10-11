@@ -6,7 +6,7 @@ namespace Snawbar\LogViewer\Http\Requests;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\File;
+use Snawbar\LogViewer\Services\LogFileService;
 
 class DeleteLogFileRequest extends FormRequest
 {
@@ -23,7 +23,7 @@ class DeleteLogFileRequest extends FormRequest
                 'string',
                 'max:255',
                 function (string $attribute, mixed $value, Closure $fail): void {
-                    if (! File::exists(storage_path('logs/' . $value))) {
+                    if (! is_string($value) || ! resolve(LogFileService::class)->logFileExists($value)) {
                         $fail('The selected log file does not exist.');
                     }
                 },
@@ -35,7 +35,6 @@ class DeleteLogFileRequest extends FormRequest
     {
         return [
             'file.required' => 'Please select a log file to delete.',
-            'file.exists' => 'The selected log file does not exist.',
         ];
     }
 
@@ -44,5 +43,10 @@ class DeleteLogFileRequest extends FormRequest
         return [
             'file' => 'log file',
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return route('log-viewer.index');
     }
 }

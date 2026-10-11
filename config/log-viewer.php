@@ -19,4 +19,14 @@ return [
     |
     */
     'middleware' => ['web', 'auth'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Entries Per Page
+    |--------------------------------------------------------------------------
+    | How many log entries are rendered per page. Keeping this modest keeps
+    | the page fast even for very large log files.
+    |
+    */
+    'per-page' => 50,
 ];

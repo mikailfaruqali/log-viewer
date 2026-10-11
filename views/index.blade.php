@@ -1,1169 +1,1726 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Viewer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{{ $logViewer->currentFile() ? $logViewer->currentFile() . ' · ' : '' }}Logs</title>
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%23249658'/%3E%3Cg fill='%23fff'%3E%3Crect x='136' y='150' width='240' height='44' rx='22'/%3E%3Crect x='136' y='234' width='176' height='44' rx='22'/%3E%3Crect x='136' y='318' width='208' height='44' rx='22'/%3E%3C/g%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+    />
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            /* Lighter dark palette — soft, airy slate */
-            --bg:          #2a2f3a;
-            --bg-soft:     #242832;
-            --surface:     #343a47;
-            --surface-2:   #404757;
-            --surface-3:   #505868;
-            --border:      #404757;
-            --border-2:    #505868;
+            --bg: #fafafa;
+            --surface: #fff;
+            --subtle: #f4f4f5;
+            --border: #e4e4e7;
+            --border-strong: #d4d4d8;
+            --text: #18181b;
+            --text-soft: #3f3f46;
+            --muted: #71717a;
+            --faint: #a1a1aa;
+            --ink: #18181b;
+            --ink-hover: #3f3f46;
+            --brand: #249658;
+            --brand-bg: #f0fdf4;
 
-            --text:        #e4e7ee;
-            --text-2:      #c5cad5;
-            --text-3:      #9aa1b1;
-            --text-4:      #6b7280;
+            --success: #16a34a;
+            --success-bg: #f0fdf4;
+            --success-line: #bbf7d0;
+            --warning: #d97706;
+            --warning-bg: #fffbeb;
+            --warning-line: #fde68a;
+            --error: #dc2626;
+            --error-bg: #fef2f2;
+            --error-line: #fecaca;
+            --info: #2563eb;
+            --info-bg: #eff6ff;
+            --info-line: #bfdbfe;
+            --debug: #71717a;
+            --debug-bg: #f4f4f5;
+            --debug-line: #e4e4e7;
 
-            --accent:      #7dd3fc;
-            --accent-soft: rgba(125,211,252,.14);
-            --accent-2:    #a5d8ff;
-
-            --red:         #fca5a5;
-            --red-soft:    rgba(252,165,165,.13);
-            --yellow:      #fcd34d;
-            --yellow-soft: rgba(252,211,77,.13);
-            --green:       #86efac;
-            --green-soft:  rgba(134,239,172,.13);
-            --blue:        #7dd3fc;
-            --blue-soft:   rgba(125,211,252,.13);
-            --purple:      #d8b4fe;
-            --purple-soft: rgba(216,180,254,.13);
-            --orange:      #fdba74;
-            --orange-soft: rgba(253,186,116,.13);
-            --cyan:        #5eead4;
-            --cyan-soft:   rgba(94,234,212,.13);
-
-            --sidebar-w:   260px;
-            --topbar-h:    58px;
-            --radius:      8px;
-            --radius-sm:   6px;
-            --radius-xs:   4px;
+            --sidebar-w: 272px;
+            --topbar-h: 60px;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow: 0 1px 2px rgba(24, 24, 27, .04), 0 1px 3px rgba(24, 24, 27, .06);
+            --shadow-lg: 0 10px 30px rgba(24, 24, 27, .12), 0 2px 6px rgba(24, 24, 27, .06);
+            --sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+            --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
         }
 
-        html, body { height: 100%; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+        }
+
+        html.is-locked {
+            overflow: hidden;
+        }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
             background: var(--bg);
             color: var(--text);
+            font-family: var(--sans);
             font-size: 14px;
-            line-height: 1.55;
-            display: flex;
-            overflow: hidden;
+            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        ::-webkit-scrollbar { width: 9px; height: 9px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-4); border: 2px solid transparent; background-clip: padding-box; }
-
-        button, input { font-family: inherit; }
-        button { cursor: pointer; }
-
-        /* ─────────── SIDEBAR ─────────── */
-        .sidebar {
-            width: var(--sidebar-w);
-            flex-shrink: 0;
-            background: var(--bg-soft);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            transition: transform .25s cubic-bezier(.4,0,.2,1);
-        }
-
-        .sidebar-brand {
-            padding: 1.1rem 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: .65rem;
-            border-bottom: 1px solid var(--border);
-            min-height: var(--topbar-h);
-        }
-
-        .brand-icon {
-            width: 32px; height: 32px;
-            background: var(--accent-soft);
-            border: 1px solid rgba(125,211,252,.3);
-            border-radius: var(--radius-sm);
-            display: grid; place-items: center;
-            color: var(--accent);
-            font-size: .95rem;
-        }
-
-        .brand-text strong {
-            display: block;
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--text);
-            line-height: 1.2;
-        }
-        .brand-text small {
-            font-size: .68rem;
-            color: var(--text-3);
-            line-height: 1.2;
-        }
-
-        .sidebar-section {
-            padding: 1rem 1.25rem .5rem;
-            font-size: .65rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--text-4);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .sidebar-section .count {
-            background: var(--surface-2);
-            color: var(--text-3);
-            padding: 1px 7px;
-            border-radius: 99px;
-            font-size: .62rem;
-            letter-spacing: 0;
-            font-weight: 600;
-        }
-
-        .file-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 .65rem 1rem;
-        }
-
-        .file-item {
-            display: flex;
-            align-items: center;
-            gap: .55rem;
-            padding: .5rem .65rem;
-            border-radius: var(--radius-xs);
-            transition: background .12s;
-            min-width: 0;
-            margin-bottom: 1px;
-            position: relative;
+        a {
+            color: inherit;
             text-decoration: none;
+        }
+
+        h1,
+        h2,
+        p {
+            margin: 0;
+        }
+
+        button,
+        input {
+            font: inherit;
             color: inherit;
         }
-        .file-item:hover { background: var(--surface-2); }
-        .file-item.active { background: var(--accent-soft); }
-        .file-item.active::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 6px; bottom: 6px;
-            width: 2px;
-            background: var(--accent);
-            border-radius: 2px;
+
+        :focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
         }
 
-        .file-item-icon { color: var(--text-4); font-size: .85rem; flex-shrink: 0; }
-        .file-item.active .file-item-icon { color: var(--accent); }
-
-        .file-item-name {
-            flex: 1;
-            font-size: .8rem;
-            color: var(--text-2);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 500;
-            min-width: 0;
+        .i {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
-        .file-item.active .file-item-name { color: var(--text); }
 
-        /* ─────────── MAIN ─────────── */
-        .main {
-            flex: 1;
+        .tone-error { --tone: var(--error); --tone-bg: var(--error-bg); --tone-line: var(--error-line); }
+        .tone-warning { --tone: var(--warning); --tone-bg: var(--warning-bg); --tone-line: var(--warning-line); }
+        .tone-info { --tone: var(--info); --tone-bg: var(--info-bg); --tone-line: var(--info-line); }
+        .tone-debug { --tone: var(--debug); --tone-bg: var(--debug-bg); --tone-line: var(--debug-line); }
+        .tone-success { --tone: var(--success); --tone-bg: var(--success-bg); --tone-line: var(--success-line); }
+
+        /* Layout: the document scrolls; the sidebar and top bar stay pinned. */
+        .layout {
+            display: grid;
+            grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: sticky;
+            top: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden;
+            height: 100dvh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            height: var(--topbar-h);
+            padding: 0 18px;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -.01em;
+        }
+
+        .brand__mark {
+            display: block;
+            width: 28px;
+            height: 28px;
+        }
+
+        .sidebar__head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 18px 8px;
+        }
+
+        .sidebar__title {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 20px;
+            padding: 0 7px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface);
+            color: var(--text-soft);
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .files {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 0 10px 16px;
+        }
+
+        .file {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            margin-bottom: 2px;
+            border-radius: var(--radius-sm);
+            color: var(--text-soft);
+            transition: background-color .15s, color .15s;
+        }
+
+        .file:hover {
+            background: var(--subtle);
+            color: var(--text);
+        }
+
+        .file.is-active {
+            background: var(--brand-bg);
+            color: var(--text);
+        }
+
+        .file.is-active::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            bottom: 8px;
+            left: 0;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--brand);
+        }
+
+        .file .i {
+            color: var(--faint);
+        }
+
+        .file.is-active .i {
+            color: var(--brand);
+        }
+
+        .file__body {
+            flex: 1;
             min-width: 0;
-            background: var(--bg);
+        }
+
+        .file__name {
+            display: block;
+            overflow: hidden;
+            font-family: var(--mono);
+            font-size: 12.5px;
+            font-weight: 500;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .file__meta {
+            display: block;
+            color: var(--faint);
+            font-size: 11.5px;
+        }
+
+        .sidebar__empty {
+            padding: 24px 18px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* Top bar */
+        .main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
 
         .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, .85);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: saturate(180%) blur(8px);
+            -webkit-backdrop-filter: saturate(180%) blur(8px);
+        }
+
+        .topbar__inner {
             display: flex;
             align-items: center;
-            gap: .5rem;
-            padding: 0 1.25rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg);
-            flex-shrink: 0;
-            height: var(--topbar-h);
+            gap: 10px;
+            min-height: var(--topbar-h);
+            padding: 0 24px;
         }
 
-        .icon-btn {
-            background: transparent;
-            border: 1px solid var(--border-2);
-            color: var(--text-2);
-            font-size: .9rem;
-            padding: 0;
-            width: 34px; height: 34px;
-            border-radius: var(--radius-sm);
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-            text-decoration: none;
-            transition: background .12s, border-color .12s, color .12s;
-        }
-        .icon-btn:hover { background: var(--surface-2); border-color: var(--text-4); color: var(--text); }
-        .icon-btn.active { background: var(--accent-soft); border-color: rgba(125,211,252,.4); color: var(--accent); }
-        .icon-btn.danger-btn:hover { background: var(--red-soft); border-color: rgba(252,165,165,.4); color: var(--red); }
-
-        .mobile-menu-btn { display: none; }
-
-        .topbar-title {
+        .topbar__title {
             flex: 1;
             min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            line-height: 1.2;
-        }
-        .topbar-title small {
-            font-size: .62rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--text-4);
-        }
-        .topbar-title strong {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: .82rem;
-            color: var(--text);
-            font-weight: 600;
-            white-space: nowrap;
             overflow: hidden;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
             text-overflow: ellipsis;
         }
 
-        /* Search */
-        .search-wrap { display: flex; align-items: center; flex-shrink: 0; }
+        .topbar__title.is-placeholder {
+            color: var(--muted);
+            font-family: var(--sans);
+        }
 
-        /* Hide search-toggle when expanded (desktop) */
-        .search-wrap.expanded .search-toggle { display: none; }
-
-        .search-form {
-            display: none;
+        .topbar__actions {
+            display: flex;
             align-items: center;
+            gap: 8px;
+        }
+
+        .search {
             position: relative;
-        }
-        .search-wrap.expanded .search-form { display: flex; }
-
-        .search-input {
-            background: var(--surface);
-            border: 1px solid var(--border-2);
-            border-radius: var(--radius-sm);
-            padding: 0 2.2rem 0 2.1rem;
-            color: var(--text);
-            font-size: .82rem;
-            width: 280px;
-            height: 34px;
-            outline: none;
-            transition: border-color .15s, background .15s;
-        }
-        .search-input::placeholder { color: var(--text-4); }
-        .search-input:focus,
-        .search-input:focus-visible {
-            outline: none;
-            box-shadow: none;
-            border-color: var(--text-3);
-            background: var(--surface-2);
+            display: flex;
+            align-items: center;
         }
 
-        .search-form .search-icon {
+        .search > .i {
             position: absolute;
-            left: .7rem;
-            color: var(--text-3);
-            font-size: .85rem;
+            left: 10px;
+            width: 14px;
+            height: 14px;
+            color: var(--faint);
             pointer-events: none;
         }
 
-        .search-form .search-close {
-            position: absolute;
-            right: .35rem;
-            background: none;
-            border: none;
-            color: var(--text-4);
-            font-size: .85rem;
-            padding: 4px;
-            border-radius: 4px;
-            display: grid;
-            place-items: center;
-            transition: color .12s, background .12s;
-        }
-        .search-form .search-close:hover { color: var(--text); background: var(--surface-2); }
-
-        /* ─────────── ENTRIES ─────────── */
-        .entries {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.1rem 1.25rem 2rem;
-        }
-
-        .flash {
-            display: flex;
-            align-items: center;
-            gap: .55rem;
-            padding: .7rem .9rem;
-            border-radius: var(--radius-sm);
-            margin-bottom: 1rem;
-            font-size: .82rem;
-            font-weight: 500;
-        }
-        .flash.success { background: var(--green-soft); color: var(--green); border: 1px solid rgba(134,239,172,.25); }
-        .flash.error   { background: var(--red-soft);   color: var(--red);   border: 1px solid rgba(252,165,165,.25); }
-
-        .result-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: .55rem .85rem;
+        .search__input {
+            width: 280px;
+            height: 34px;
+            padding: 0 34px 0 32px;
+            border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             background: var(--surface);
-            border: 1px solid var(--border);
-            margin-bottom: 1rem;
-            font-size: .8rem;
-            color: var(--text-2);
+            font-size: 13px;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
         }
-        .result-bar a {
-            color: var(--text-3);
-            text-decoration: none;
-            font-size: .73rem;
+
+        .search__input::placeholder {
+            color: var(--faint);
+        }
+
+        .search__input:focus {
+            border-color: var(--border-strong);
+            box-shadow: 0 0 0 3px rgba(36, 150, 88, .12);
+        }
+
+        .search__input::-webkit-search-cancel-button {
+            display: none;
+        }
+
+        .search__clear {
+            position: absolute;
+            right: 4px;
+        }
+
+        .kbd {
+            position: absolute;
+            right: 8px;
+            padding: 0 5px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--faint);
+            font-family: var(--mono);
+            font-size: 11px;
+            line-height: 17px;
+            pointer-events: none;
+        }
+
+        .search__input:focus ~ .kbd {
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
             display: inline-flex;
             align-items: center;
-            gap: .3rem;
-            padding: .25rem .55rem;
-            border-radius: var(--radius-xs);
-            border: 1px solid var(--border-2);
-            transition: all .12s;
+            justify-content: center;
+            gap: 7px;
+            height: 34px;
+            padding: 0 14px;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: background-color .15s, border-color .15s, color .15s;
         }
-        .result-bar a:hover { color: var(--red); border-color: rgba(252,165,165,.3); background: var(--red-soft); }
 
-        /* ─────────── LOG CARDS ─────────── */
-        .log-card {
+        .btn .i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .btn-dark {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .btn-dark:hover {
+            background: var(--ink-hover);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-outline {
+            background: var(--surface);
+            border-color: var(--border);
+            color: var(--text-soft);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+
+        .btn-outline.is-danger:hover {
+            border-color: var(--error-line);
+            background: var(--error-bg);
+            color: var(--error);
+        }
+
+        .btn-icon {
+            width: 34px;
+            padding: 0;
+        }
+
+        .btn-ghost {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .btn-ghost:hover {
+            background: var(--subtle);
+            color: var(--text);
+        }
+
+        .btn-ghost.is-copied,
+        .btn-copy.is-copied {
+            color: var(--success);
+        }
+
+        .btn-copy {
+            height: 26px;
+            padding: 0 8px;
+            border-color: var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .btn-copy:hover {
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+
+        .btn-copy .i {
+            width: 13px;
+            height: 13px;
+        }
+
+        .menu-btn {
+            display: none;
+        }
+
+        /* Page */
+        .content {
+            flex: 1;
+            width: 100%;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 28px 24px 48px;
+        }
+
+        .card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            margin-bottom: .55rem;
-            overflow: hidden;
-            transition: border-color .15s, box-shadow .15s;
-            position: relative;
-        }
-        .log-card:hover { border-color: var(--border-2); }
-        .log-card.open  { border-color: var(--border-2); box-shadow: 0 4px 16px rgba(0,0,0,.18); }
-
-        /* level color via custom prop so message accent can use it too */
-        .log-card.level-error,
-        .log-card.level-critical,
-        .log-card.level-alert     { --level-color: var(--red);    border-left: 3px solid var(--red); }
-        .log-card.level-emergency { --level-color: var(--purple); border-left: 3px solid var(--purple); }
-        .log-card.level-warning   { --level-color: var(--yellow); border-left: 3px solid var(--yellow); }
-        .log-card.level-info,
-        .log-card.level-notice    { --level-color: var(--blue);   border-left: 3px solid var(--blue); }
-        .log-card.level-debug     { --level-color: var(--text-4); border-left: 3px solid var(--text-4); }
-
-        .log-header {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: .7rem;
-            padding: .85rem 1rem;
-            cursor: pointer;
-            user-select: none;
-            align-items: start;
+            box-shadow: var(--shadow);
         }
 
-        .log-chevron {
-            margin-top: .15rem;
-            color: var(--text-4);
-            font-size: .75rem;
-            transition: transform .2s, color .12s;
-        }
-        .log-card:hover .log-chevron { color: var(--text-3); }
-        .log-card.open .log-chevron  { transform: rotate(90deg); color: var(--accent); }
-
-        .log-header-main {
-            min-width: 0;
+        .alert {
             display: flex;
-            flex-direction: column;
-            gap: .55rem;
-        }
-
-        .log-meta-row {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            flex-wrap: wrap;
-        }
-
-        .lvl {
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-            font-size: .67rem;
-            font-weight: 700;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-            padding: .18rem .55rem .18rem .5rem;
-            border-radius: 99px;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .lvl::before {
-            content: '';
-            width: 5px; height: 5px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-        .lvl-error, .lvl-critical, .lvl-alert { background: var(--red-soft);    color: var(--red); }
-        .lvl-emergency                        { background: var(--purple-soft); color: var(--purple); }
-        .lvl-warning                          { background: var(--yellow-soft); color: var(--yellow); }
-        .lvl-info, .lvl-notice                { background: var(--blue-soft);   color: var(--blue); }
-        .lvl-debug                            { background: rgba(130,137,151,.13); color: var(--text-3); }
-
-        .log-time {
-            font-size: .75rem;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--text-3);
+            align-items: flex-start;
+            gap: 10px;
+            padding: 11px 14px;
+            margin-bottom: 20px;
+            border: 1px solid var(--tone-line);
+            border-radius: var(--radius-sm);
+            background: var(--tone-bg);
+            color: var(--tone);
             font-weight: 500;
-        }
-        .log-env {
-            font-size: .67rem;
-            color: var(--text-3);
-            background: var(--surface-2);
-            border: 1px solid var(--border-2);
-            border-radius: var(--radius-xs);
-            padding: 1px 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-        }
-
-        /* MESSAGE — clean typography with subtle left accent indent (no full border) */
-        .log-message {
-            font-size: .9rem;
-            color: var(--text);
-            line-height: 1.6;
-            font-weight: 500;
-            word-break: break-word;
             overflow-wrap: anywhere;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            position: relative;
-            padding: .15rem 0 .15rem .7rem;
-        }
-        .log-message::before {
-            content: '';
-            position: absolute;
-            left: 0; top: .35rem; bottom: .35rem;
-            width: 2px;
-            background: var(--level-color, var(--accent));
-            opacity: .55;
-            border-radius: 2px;
-        }
-        .log-card.open .log-message {
-            -webkit-line-clamp: unset;
-            display: block;
         }
 
-        /* badges — always shown in header */
-        .badge-row {
+        .alert .i {
+            margin-top: 2px;
+        }
+
+        /* Summary */
+        .summary {
             display: flex;
             flex-wrap: wrap;
-            gap: .35rem;
-            padding-top: .55rem;
-            border-top: 1px dashed var(--border-2);
-        }
-
-        .badge-row-divider { display: none; }
-
-        .badge {
-            display: inline-flex;
-            font-size: .68rem;
-            font-family: 'JetBrains Mono', monospace;
-            border-radius: var(--radius-xs);
-            border: 1px solid var(--border-2);
-            background: var(--surface-2);
-            overflow: hidden;
-            max-width: 100%;
-        }
-        .badge-key {
-            font-weight: 700;
-            background: var(--surface-3);
-            color: var(--text-2);
-            padding: 2px 7px;
-            letter-spacing: .3px;
-            border-right: 1px solid var(--border-2);
-        }
-        .badge-val {
-            color: var(--text);
-            padding: 2px 7px;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 280px;
-        }
-        .badge-tenant       { border-color: rgba(134,239,172,.25); }
-        .badge-tenant       .badge-key { background: var(--green-soft); color: var(--green); }
-        .badge-userid,
-        .badge-user_id,
-        .badge-user         { border-color: rgba(125,211,252,.25); }
-        .badge-userid       .badge-key,
-        .badge-user_id      .badge-key,
-        .badge-user         .badge-key { background: var(--blue-soft); color: var(--blue); }
-        .badge-url,
-        .badge-route        { border-color: rgba(252,211,77,.25); }
-        .badge-url          .badge-key,
-        .badge-route        .badge-key { background: var(--yellow-soft); color: var(--yellow); }
-        .badge-method       { border-color: rgba(253,186,116,.25); }
-        .badge-method       .badge-key { background: var(--orange-soft); color: var(--orange); }
-        .badge-channel,
-        .badge-environment,
-        .badge-env          { border-color: rgba(94,234,212,.25); }
-        .badge-channel      .badge-key,
-        .badge-env          .badge-key,
-        .badge-environment  .badge-key { background: var(--cyan-soft); color: var(--cyan); }
-        .badge-ip,
-        .badge-guard,
-        .badge-session_id,
-        .badge-sessionid,
-        .badge-request_id,
-        .badge-requestid    { border-color: rgba(216,180,254,.25); }
-        .badge-ip           .badge-key,
-        .badge-guard        .badge-key,
-        .badge-session_id   .badge-key,
-        .badge-sessionid    .badge-key,
-        .badge-request_id   .badge-key,
-        .badge-requestid    .badge-key { background: var(--purple-soft); color: var(--purple); }
-
-        .log-copy-btn {
-            background: transparent;
-            border: 1px solid var(--border-2);
-            color: var(--text-3);
-            font-size: .7rem;
-            font-weight: 500;
-            padding: .3rem .65rem;
-            border-radius: var(--radius-xs);
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-            transition: all .12s;
-            align-self: start;
-        }
-        .log-copy-btn:hover  { border-color: var(--text-4); color: var(--text); background: var(--surface-2); }
-        .log-copy-btn.copied { border-color: rgba(134,239,172,.3); color: var(--green); background: var(--green-soft); }
-
-        /* ─────────── DETAIL ─────────── */
-        .log-detail {
-            display: none;
-            border-top: 1px solid var(--border);
-            background: var(--bg);
-        }
-        .log-card.open .log-detail { display: block; }
-
-        .detail-section {
-            padding: .85rem 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .detail-section:last-child { border-bottom: none; }
-
-        .detail-label {
-            font-size: .64rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--text-4);
-            margin-bottom: .55rem;
-            display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: .5rem;
-        }
-        .detail-label > span:first-child {
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
+            gap: 20px;
+            padding: 20px 22px;
+            margin-bottom: 28px;
         }
 
-        .detail-label-copy {
-            background: transparent;
-            border: 1px solid var(--border-2);
-            color: var(--text-3);
-            font-size: .65rem;
-            padding: 2px 7px;
-            border-radius: 4px;
+        .summary__main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .summary__title {
+            overflow: hidden;
+            font-family: var(--mono);
+            font-size: 16px;
             font-weight: 500;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-flex;
-            align-items: center;
-            gap: .25rem;
-            transition: all .12s;
+            letter-spacing: -.01em;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .summary__text {
+            margin-top: 2px;
+            color: var(--muted);
+        }
+
+        .chip {
+            display: grid;
             flex-shrink: 0;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--brand-bg);
+            color: var(--brand);
+            box-shadow: inset 0 0 0 1px var(--success-line);
         }
-        .detail-label-copy:hover  { border-color: var(--text-4); color: var(--text); background: var(--surface); }
-        .detail-label-copy.copied { border-color: rgba(134,239,172,.3); color: var(--green); background: var(--green-soft); }
 
-        pre.code-block {
-            background: var(--bg-soft);
-            border: 1px solid var(--border);
+        .chip .i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 4px;
+        }
+
+        .stat {
+            min-width: 84px;
+            padding: 6px 12px;
+            border: 1px solid transparent;
             border-radius: var(--radius-sm);
-            padding: .8rem 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: .76rem;
-            line-height: 1.65;
-            color: var(--text-2);
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-break: break-word;
+            transition: background-color .15s, border-color .15s;
         }
-        pre.code-block .trace-exception { color: var(--red); font-weight: 600; }
-        pre.code-block .trace-caused    { color: var(--yellow); font-weight: 600; }
-        pre.code-block .trace-at        { color: var(--text-4); }
-        pre.code-block .trace-frame     { color: var(--text-3); }
 
-        .json-tree {
-            background: var(--bg-soft);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: .8rem 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: .76rem;
-            line-height: 1.7;
-            overflow-x: auto;
-            white-space: pre;
+        .stat:hover {
+            background: var(--subtle);
         }
-        .json-key   { color: var(--accent-2); }
-        .json-str   { color: var(--green); }
-        .json-num   { color: var(--orange); }
-        .json-bool  { color: var(--purple); font-weight: 600; }
-        .json-null  { color: var(--text-4); font-style: italic; }
-        .json-punct { color: var(--text-4); }
 
-        mark.search-highlight {
-            background: rgba(252,211,77,.28);
-            color: var(--yellow);
-            border-radius: 3px;
-            padding: 0 3px;
+        .stat.is-active {
+            border-color: var(--tone-line);
+            background: var(--tone-bg);
+        }
+
+        .stat__value {
+            font-family: var(--mono);
+            font-size: 22px;
+            font-weight: 500;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat__value.is-zero {
+            color: var(--faint);
+        }
+
+        .stat__label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--tone, var(--faint));
+        }
+
+        /* List */
+        .list-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin: 0 2px 10px;
+        }
+
+        .list-head__title {
+            font-size: 14px;
             font-weight: 600;
         }
 
+        .list-head__text {
+            color: var(--muted);
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .list-head__clear {
+            margin-left: auto;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .list-head__clear:hover {
+            color: var(--text);
+        }
+
+        .list {
+            overflow: hidden;
+        }
+
+        .list > * + * {
+            border-top: 1px solid var(--border);
+        }
+
+        /* Entry */
+        .entry > summary {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 12px 12px 16px;
+            list-style: none;
+            cursor: pointer;
+            box-shadow: inset 3px 0 0 var(--tone);
+            transition: background-color .15s;
+        }
+
+        .entry > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .entry > summary:hover,
+        .entry[open] > summary {
+            background: #fcfcfd;
+        }
+
+        .entry__body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entry__meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .level {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 22px;
+            padding: 0 8px;
+            border: 1px solid var(--tone-line);
+            border-radius: 999px;
+            background: var(--tone-bg);
+            color: var(--tone);
+            font-size: 11.5px;
+            font-weight: 500;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+
+        .level .i {
+            width: 12px;
+            height: 12px;
+            stroke-width: 2.5;
+        }
+
+        .time {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .time .i {
+            width: 13px;
+            height: 13px;
+            color: var(--faint);
+        }
+
+        .env {
+            height: 20px;
+            padding: 0 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--subtle);
+            color: var(--text-soft);
+            font-family: var(--mono);
+            font-size: 11.5px;
+            line-height: 18px;
+        }
+
+        .entry__message {
+            display: -webkit-box;
+            overflow: hidden;
+            color: var(--text);
+            font-weight: 500;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+            white-space: pre-line;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .entry__tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            display: inline-flex;
+            max-width: 100%;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            font-family: var(--mono);
+            font-size: 11.5px;
+            line-height: 20px;
+        }
+
+        .tag__key {
+            flex-shrink: 0;
+            padding: 0 6px;
+            border-right: 1px solid var(--border);
+            background: var(--subtle);
+            color: var(--muted);
+        }
+
+        .tag__value {
+            min-width: 0;
+            max-width: 320px;
+            overflow: hidden;
+            padding: 0 7px;
+            color: var(--text-soft);
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .entry__actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .caret {
+            color: var(--faint);
+            transition: transform .2s;
+        }
+
+        .entry[open] .caret {
+            transform: rotate(180deg);
+        }
+
+        .entry > summary:hover .caret {
+            color: var(--text);
+        }
+
+        /* Entry detail */
+        .detail {
+            padding: 4px 16px 16px 19px;
+            box-shadow: inset 3px 0 0 var(--tone);
+            background: #fcfcfd;
+        }
+
+        .section + .section {
+            margin-top: 14px;
+        }
+
+        .section__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .section__title {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            overflow-wrap: anywhere;
+        }
+
+        .section__title .i {
+            width: 13px;
+            height: 13px;
+        }
+
+        .code {
+            margin: 0;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-soft);
+            font-family: var(--mono);
+            font-size: 12.5px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            tab-size: 4;
+        }
+
+        .trace-exception { color: #b91c1c; font-weight: 500; }
+        .trace-caused { color: #b45309; font-weight: 500; }
+        .trace-at { color: var(--muted); }
+        .trace-frame { color: var(--text-soft); }
+        .trace-vendor { color: var(--faint); }
+
+        .json-key { color: #1d4ed8; }
+        .json-str { color: #15803d; }
+        .json-num { color: #c2410c; }
+        .json-bool { color: #7c3aed; font-weight: 500; }
+        .json-null { color: var(--faint); font-style: italic; }
+        .json-punct { color: var(--faint); }
+
+        mark {
+            padding: 0 2px;
+            border-radius: 3px;
+            background: #fef08a;
+            color: inherit;
+        }
+
+        /* Pagination */
+        .pager {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .pager__text {
+            color: var(--muted);
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pager__actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn[aria-disabled='true'] {
+            opacity: .45;
+            pointer-events: none;
+        }
+
+        /* Empty */
         .empty {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: .85rem;
-            padding: 5rem 2rem;
-            color: var(--text-3);
+            gap: 6px;
+            padding: 56px 20px;
+            color: var(--muted);
             text-align: center;
         }
-        .empty-icon {
-            width: 56px; height: 56px;
-            border-radius: 50%;
-            background: var(--surface);
-            border: 1px solid var(--border-2);
-            display: grid; place-items: center;
-            font-size: 1.4rem;
-            color: var(--text-4);
-        }
-        .empty p { font-size: .88rem; font-weight: 500; }
-        .empty small { font-size: .78rem; color: var(--text-4); }
 
-        .overlay {
-            display: none;
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,.5);
-            z-index: 50;
+        .empty__icon {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            margin-bottom: 6px;
+            border-radius: 50%;
+            background: var(--subtle);
+            color: var(--faint);
+        }
+
+        .empty__title {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        /* Dialog */
+        .dialog {
+            width: min(420px, calc(100vw - 32px));
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .dialog::backdrop {
+            background: rgba(24, 24, 27, .35);
             backdrop-filter: blur(2px);
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed; top: 0; left: 0;
-                z-index: 100; height: 100vh;
-                transform: translateX(-100%);
-                width: 250px;
-                box-shadow: 4px 0 20px rgba(0,0,0,.4);
-            }
-            .sidebar.open { transform: translateX(0); }
-            .overlay.show { display: block; }
-            .mobile-menu-btn { display: grid; }
-
-            .file-actions { opacity: 1; }
-
-            .topbar { padding: 0 .75rem; gap: .4rem; }
-
-            /* Mobile search expansion: hide title, fill toolbar */
-            .topbar.searching .topbar-title,
-            .topbar.searching .download-btn { display: none; }
-            .topbar.searching .search-wrap { flex: 1; min-width: 0; }
-            .topbar.searching .search-form { width: 100%; }
-            .topbar.searching .search-input { width: 100%; }
-
-            .topbar-title strong { font-size: .76rem; }
-            .topbar-title small { font-size: .58rem; }
-
-            .entries { padding: .8rem; }
-
-            .log-header {
-                grid-template-columns: auto 1fr;
-                padding: .7rem .8rem;
-                padding-right: 2.6rem;
-                gap: .55rem;
-            }
-            .log-header-main { gap: .5rem; }
-            .log-message { font-size: .85rem; padding-left: .65rem; }
-
-            .log-meta-row { gap: .35rem; }
-            .lvl { font-size: .6rem; padding: .14rem .45rem .14rem .4rem; }
-            .log-time { font-size: .68rem; }
-
-            .badge-val { max-width: 130px; }
-            .badge { font-size: .62rem; }
-            .badge-key, .badge-val { padding: 1px 6px; }
-
-            .log-copy-btn {
-                position: absolute;
-                top: .55rem;
-                right: .55rem;
-                width: 30px;
-                height: 30px;
-                padding: 0;
-                justify-content: center;
-                font-size: 0;
-            }
-            .log-copy-btn i { font-size: .85rem; }
-            .log-copy-btn.copied { font-size: 0; }
-
-            .detail-section { padding: .7rem .8rem; }
-            pre.code-block, .json-tree { font-size: .72rem; padding: .65rem .75rem; line-height: 1.6; }
-
-            .result-bar { font-size: .75rem; padding: .5rem .7rem; }
+        .dialog__body {
+            display: flex;
+            gap: 14px;
+            padding: 22px 22px 18px;
         }
 
-        @media (max-width: 480px) {
-            .badge-val { max-width: 100px; }
-            .topbar-title small { display: none; }
+        .dialog__icon {
+            display: grid;
+            flex-shrink: 0;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--error-bg);
+            color: var(--error);
+            box-shadow: inset 0 0 0 1px var(--error-line);
+        }
+
+        .dialog__title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .dialog__text {
+            margin-top: 4px;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        code {
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: var(--subtle);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 12.5px;
+        }
+
+        .dialog__actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 14px 22px;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        /* Footer */
+        footer {
+            padding: 0 0 24px;
+            color: var(--faint);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--muted);
+        }
+
+        footer a:hover {
+            color: var(--text);
+        }
+
+        .backdrop {
+            display: none;
+        }
+
+        @media (max-width: 1100px) {
+            .search__input {
+                width: 220px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 40;
+                width: min(var(--sidebar-w), 85vw);
+                box-shadow: var(--shadow-lg);
+                transform: translateX(-105%);
+                transition: transform .2s ease;
+                visibility: hidden;
+            }
+
+            .sidebar.is-open {
+                transform: none;
+                visibility: visible;
+            }
+
+            .backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 30;
+                background: rgba(24, 24, 27, .3);
+            }
+
+            .backdrop.is-open {
+                display: block;
+            }
+
+            .menu-btn {
+                display: inline-flex;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar__inner {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 10px 14px;
+            }
+
+            .search {
+                order: 3;
+                flex-basis: 100%;
+            }
+
+            .search__input {
+                width: 100%;
+            }
+
+            .kbd {
+                display: none;
+            }
+
+            .content {
+                padding: 18px 14px 40px;
+            }
+
+            .summary {
+                padding: 16px;
+            }
+
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                width: 100%;
+                padding-top: 12px;
+                border-top: 1px solid var(--border);
+            }
+
+            .stat {
+                min-width: 0;
+                padding: 6px 8px;
+            }
+
+            .stat__value {
+                font-size: 18px;
+            }
+
+            .entry > summary {
+                gap: 8px;
+                padding: 12px 10px 12px 14px;
+            }
+
+            .detail {
+                padding: 4px 12px 14px 15px;
+            }
+
+            .tag__value {
+                max-width: 160px;
+            }
+
+            .time .i {
+                display: none;
+            }
+
+            .pager__text {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 
 <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+        <symbol id="i-app" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="96" fill="#249658" />
+            <g fill="#fff">
+                <rect x="136" y="150" width="240" height="44" rx="22" />
+                <rect x="136" y="234" width="176" height="44" rx="22" />
+                <rect x="136" y="318" width="208" height="44" rx="22" />
+            </g>
+        </symbol>
+        <symbol id="i-file" viewBox="0 0 24 24">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path d="M16 13H8" />
+            <path d="M16 17H8" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+        </symbol>
+        <symbol id="i-x" viewBox="0 0 24 24">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M12 15V3" />
+        </symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24">
+            <path d="M3 6h18" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </symbol>
+        <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
+        <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24">
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+        </symbol>
+        <symbol id="i-error" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m15 9-6 6" />
+            <path d="m9 9 6 6" />
+        </symbol>
+        <symbol id="i-warning" viewBox="0 0 24 24">
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+        </symbol>
+        <symbol id="i-info" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+        </symbol>
+        <symbol id="i-debug" viewBox="0 0 24 24">
+            <path d="m16 18 6-6-6-6" />
+            <path d="m8 6-6 6 6 6" />
+        </symbol>
+        <symbol id="i-success" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <path d="m9 12 2 2 4-4" />
+        </symbol>
+        <symbol id="i-layers" viewBox="0 0 24 24">
+            <path d="M12 2 2 7l10 5 10-5-10-5Z" />
+            <path d="m2 17 10 5 10-5" />
+            <path d="m2 12 10 5 10-5" />
+        </symbol>
+        <symbol id="i-inbox" viewBox="0 0 24 24">
+            <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+            <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+        </symbol>
+        <symbol id="i-message" viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </symbol>
+        <symbol id="i-braces" viewBox="0 0 24 24">
+            <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" />
+            <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
+        </symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+        </symbol>
+    </svg>
 
-<div class="overlay" id="overlay"></div>
-
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <div class="brand-icon"><i class="bi bi-terminal-fill"></i></div>
-        <div class="brand-text">
-            <strong>Log Viewer</strong>
-            <small>Snawbar</small>
-        </div>
-    </div>
-
-    <div class="sidebar-section">
-        <span>Files</span>
-        <span class="count">{{ count($logFiles) }}</span>
-    </div>
-
-    <div class="file-list">
-        @forelse($logFiles as $file)
-            <a href="?file={{ urlencode($file) }}" class="file-item @if($file === $currentFile) active @endif" title="{{ $file }}">
-                <i class="bi bi-file-earmark-text file-item-icon"></i>
-                <span class="file-item-name">{{ $file }}</span>
+    <div class="layout">
+        <aside class="sidebar" id="sidebar" aria-label="Log files">
+            <a href="{{ $logViewer->indexUrl() }}" class="brand">
+                <svg class="brand__mark" aria-hidden="true"><use href="#i-app" /></svg>
+                Logs
             </a>
-        @empty
-            <div class="empty" style="padding:2rem 1rem">
-                <div class="empty-icon"><i class="bi bi-folder-x"></i></div>
-                <p>No log files</p>
+
+            <div class="sidebar__head">
+                <span class="sidebar__title">Files</span>
+                <span class="count">{{ $logViewer->fileCount() }}</span>
             </div>
-        @endforelse
-    </div>
-</aside>
 
-<div class="main">
-    <div class="topbar" id="topbar">
-        <button class="icon-btn mobile-menu-btn" id="mobileMenuBtn" title="Menu"><i class="bi bi-list"></i></button>
-
-        <div class="topbar-title">
-            @if($currentFile)
-                <small>Viewing</small>
-                <strong>{{ $currentFile }}</strong>
-            @else
-                <strong style="font-family:'Inter',sans-serif;color:var(--text-3);font-weight:500">Select a log file</strong>
-            @endif
-        </div>
-
-        @if($currentFile)
-        <a href="{{ route('log-viewer.download', ['file' => $currentFile]) }}" class="icon-btn download-btn" title="Download log">
-            <i class="bi bi-download"></i>
-        </a>
-
-        <form action="{{ route('log-viewer.delete') }}" method="POST" class="delete-form download-btn" data-filename="{{ $currentFile }}" style="display:inline">
-            @csrf
-            @method('DELETE')
-            <input type="hidden" name="file" value="{{ $currentFile }}">
-            <button type="submit" class="icon-btn danger-btn" title="Delete log"><i class="bi bi-trash3"></i></button>
-        </form>
-
-        <div class="search-wrap @if($searchTerm) expanded @endif" id="searchWrap"
-             data-clear-url="{{ route('log-viewer.index', ['file' => $currentFile]) }}">
-            <button class="icon-btn search-toggle" id="searchToggle" title="Search">
-                <i class="bi bi-search"></i>
-            </button>
-            <form action="{{ route('log-viewer.index') }}" method="GET" id="searchForm" class="search-form">
-                <i class="bi bi-search search-icon"></i>
-                <input type="hidden" name="file" value="{{ $currentFile }}">
-                <input type="text" name="search" id="searchInput"
-                       value="{{ $searchTerm }}"
-                       placeholder="Search logs..."
-                       class="search-input"
-                       autocomplete="off">
-                <button type="button" class="search-close" id="searchClose" title="Close"><i class="bi bi-x-lg"></i></button>
-            </form>
-        </div>
-        @endif
-    </div>
-
-    <div class="entries" id="entries">
-
-        @if(session('success'))
-            <div class="flash success"><i class="bi bi-check-circle-fill"></i> {{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="flash error"><i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}</div>
-        @endif
-
-        @if($searchTerm && $currentFile)
-        <div class="result-bar">
-            <span>
-                @if($logEntries->count() > 0)
-                    <strong style="color:var(--text)">{{ $logEntries->count() }}</strong> result{{ $logEntries->count() !== 1 ? 's' : '' }} for <em style="color:var(--accent);font-style:normal;font-family:'JetBrains Mono',monospace">"{{ $searchTerm }}"</em>
-                @else
-                    No results for <em style="color:var(--red);font-style:normal">"{{ $searchTerm }}"</em>
-                @endif
-            </span>
-            <a href="{{ route('log-viewer.index', ['file' => $currentFile]) }}">
-                <i class="bi bi-x-lg"></i> Clear
-            </a>
-        </div>
-        @endif
-
-        @forelse($logEntries as $index => $entry)
-        @php
-            $lvl = strtolower($entry->level);
-            $hasContext = $entry->hasContext();
-            $hasDetail = $entry->hasStackTrace() || $entry->hasExtra() || $entry->hasLongContext();
-        @endphp
-        <div class="log-card level-{{ $lvl }}" id="card-{{ $index }}">
-
-            <div class="log-header" onclick="toggleCard({{ $index }}, {{ $hasDetail ? 'true' : 'false' }})">
-                <i class="bi bi-chevron-right log-chevron"
-                   style="{{ !$hasDetail ? 'visibility:hidden' : '' }}"></i>
-
-                <div class="log-header-main">
-                    <div class="log-meta-row">
-                        <span class="lvl lvl-{{ $lvl }}">{{ $entry->level }}</span>
-                        <span class="log-time">{{ $entry->timestamp }}</span>
-                        @if($entry->environment && $entry->environment !== 'production')
-                            <span class="log-env">{{ $entry->environment }}</span>
-                        @endif
-                    </div>
-
-                    <div class="log-message">{!! $entry->highlightSearchTerm($entry->message, $searchTerm) !!}</div>
-
-                    @if($hasContext)
-                    <div class="badge-row">
-                        <span class="badge-row-divider" aria-hidden="true"></span>
-                        @foreach($entry->getContext() as $key => $value)
-                        <span class="badge badge-{{ strtolower($key) }}" title="{{ $key }}: {{ $value }}">
-                            <span class="badge-key">{{ strtoupper($key) }}</span>
-                            <span class="badge-val">{{ $value }}</span>
+            <nav class="files">
+                @forelse ($logViewer->files() as $file)
+                    <a
+                        href="{{ $file['url'] }}"
+                        @class(['file', 'is-active' => $file['active']])
+                        title="{{ $file['name'] }}"
+                        @if ($file['active']) aria-current="page" @endif
+                    >
+                        <svg class="i"><use href="#i-file" /></svg>
+                        <span class="file__body">
+                            <span class="file__name">{{ $file['name'] }}</span>
+                            <span class="file__meta">{{ $file['size'] }} · {{ $file['modified'] }}</span>
                         </span>
-                        @endforeach
-                    </div>
-                    @endif
-                </div>
+                    </a>
+                @empty
+                    <p class="sidebar__empty">No log files found.</p>
+                @endforelse
+            </nav>
+        </aside>
 
-                <button class="log-copy-btn"
-                        onclick="event.stopPropagation(); copyLog({{ $index }}, this)"
-                        title="Copy log">
-                    <i class="bi bi-clipboard"></i> <span>Copy</span>
-                </button>
-            </div>
+        <div class="backdrop" id="backdrop"></div>
 
-            @if($hasDetail)
-            <div class="log-detail">
+        <div class="main">
+            <header class="topbar">
+                <div class="topbar__inner">
+                    <button
+                        type="button"
+                        class="btn btn-outline btn-icon menu-btn"
+                        id="menuButton"
+                        title="Files"
+                        aria-controls="sidebar"
+                        aria-expanded="false"
+                    >
+                        <svg class="i"><use href="#i-menu" /></svg>
+                    </button>
 
-                {{-- 1. Message --}}
-                <div class="detail-section">
-                    <div class="detail-label">
-                        <span><i class="bi bi-chat-left-text"></i>Message</span>
-                        <button class="detail-label-copy" onclick="copyText('msg-{{ $index }}', this)">
-                            <i class="bi bi-clipboard"></i> Copy
-                        </button>
-                    </div>
-                    <pre class="code-block" id="msg-{{ $index }}">{{ $entry->message }}</pre>
-                </div>
+                    @if ($logViewer->hasCurrentFile())
+                        <span
+                            class="topbar__title"
+                            title="{{ $logViewer->currentFile() }}"
+                        >{{ $logViewer->currentFile() }}</span>
 
-                {{-- 2. Long shared context (Request Input, Extra arrays, etc.) --}}
-                @if($entry->hasLongContext())
-                    @foreach($entry->getLongContext() as $ctxKey => $ctxValue)
-                    <div class="detail-section">
-                        <div class="detail-label">
-                            <span><i class="bi bi-braces"></i>{{ $ctxKey }}</span>
-                            <button class="detail-label-copy" onclick="copyText('ctx-{{ $index }}-{{ $loop->index }}', this)">
-                                <i class="bi bi-clipboard"></i> Copy
+                        <form action="{{ $logViewer->indexUrl() }}" method="GET" class="search" role="search">
+                            <svg class="i"><use href="#i-search" /></svg>
+                            <input type="hidden" name="file" value="{{ $logViewer->currentFile() }}" />
+                            @if ($logViewer->level())
+                                <input type="hidden" name="level" value="{{ $logViewer->level() }}" />
+                            @endif
+                            <input
+                                type="search"
+                                name="search"
+                                id="searchInput"
+                                class="search__input"
+                                value="{{ $logViewer->search() }}"
+                                placeholder="Search this log…"
+                                autocomplete="off"
+                                aria-label="Search log entries"
+                            />
+                            @if ($logViewer->search())
+                                <a
+                                    href="{{ $logViewer->clearSearchUrl() }}"
+                                    class="btn btn-ghost search__clear"
+                                    title="Clear search"
+                                >
+                                    <svg class="i"><use href="#i-x" /></svg>
+                                </a>
+                            @else
+                                <span class="kbd" aria-hidden="true">/</span>
+                            @endif
+                        </form>
+
+                        <div class="topbar__actions">
+                            <a
+                                href="{{ $logViewer->downloadUrl() }}"
+                                class="btn btn-outline btn-icon"
+                                title="Download log"
+                            >
+                                <svg class="i"><use href="#i-download" /></svg>
+                            </a>
+                            <button
+                                type="button"
+                                class="btn btn-outline btn-icon is-danger"
+                                id="deleteButton"
+                                title="Delete log"
+                            >
+                                <svg class="i"><use href="#i-trash" /></svg>
                             </button>
                         </div>
-                        @if(is_array($ctxValue))
-                            <div class="json-tree" id="ctx-{{ $index }}-{{ $loop->index }}">{!! jsonHighlight($ctxValue) !!}</div>
-                        @else
-                            <pre class="code-block" id="ctx-{{ $index }}-{{ $loop->index }}">{{ $ctxValue }}</pre>
+                    @else
+                        <span class="topbar__title is-placeholder">Select a log file</span>
+                    @endif
+                </div>
+            </header>
+
+            <main class="content">
+                @if ($flash = $logViewer->flash())
+                    <div class="alert tone-{{ $flash['tone'] }}" role="status">
+                        <svg class="i"><use href="#i-{{ $flash['tone'] }}" /></svg>
+                        <span>{{ $flash['message'] }}</span>
+                    </div>
+                @endif
+
+                @if ($logViewer->hasCurrentFile())
+                    <section class="card summary">
+                        <div class="summary__main">
+                            <span class="chip"
+                                ><svg class="i"><use href="#i-layers" /></svg
+                            ></span>
+                            <div style="min-width: 0">
+                                <h1 class="summary__title" title="{{ $logViewer->currentFile() }}">
+                                    {{ $logViewer->currentFile() }}
+                                </h1>
+                                <p class="summary__text">{{ $logViewer->currentFileMeta() }}</p>
+                            </div>
+                        </div>
+
+                        <nav class="stats" aria-label="Filter by level">
+                            @foreach ($logViewer->stats() as $stat)
+                                <a
+                                    href="{{ $stat['url'] }}"
+                                    @class(['stat', 'tone-' . $stat['tone'], 'is-active' => $stat['active']])
+                                    title="{{ $stat['active'] ? 'Show all levels' : 'Show only ' . strtolower($stat['label']) }}"
+                                >
+                                    <div @class(['stat__value', 'is-zero' => $stat['value'] === 0])>
+                                        {{ number_format($stat['value']) }}
+                                    </div>
+                                    <div class="stat__label"><span class="dot"></span>{{ $stat['label'] }}</div>
+                                </a>
+                            @endforeach
+                        </nav>
+                    </section>
+
+                    <div class="list-head">
+                        <h2 class="list-head__title">{{ $logViewer->listTitle() }}</h2>
+                        <span class="list-head__text">{{ $logViewer->resultText() }}</span>
+                        @if ($logViewer->isFiltered())
+                            <a href="{{ $logViewer->clearFiltersUrl() }}" class="list-head__clear">Clear filters</a>
                         @endif
                     </div>
-                    @endforeach
                 @endif
 
-                {{-- 3. Stack Trace --}}
-                @if($entry->hasStackTrace())
-                <div class="detail-section">
-                    <div class="detail-label">
-                        <span><i class="bi bi-bug"></i>Stack Trace</span>
-                        <button class="detail-label-copy" onclick="copyText('trace-{{ $index }}', this)">
-                            <i class="bi bi-clipboard"></i> Copy
-                        </button>
-                    </div>
-                    <pre class="code-block" id="trace-{{ $index }}">{!! formatStackTrace($entry->stackTrace) !!}</pre>
+                <div class="card list">
+                    @forelse ($logViewer->entries() as $index => $entry)
+                        @php($tone = $entry->levelGroup())
+                        <details class="entry tone-{{ $tone }}" id="entry-{{ $index }}">
+                            <summary>
+                                <div class="entry__body">
+                                    <div class="entry__meta">
+                                        <span class="level">
+                                            <svg class="i"><use href="#i-{{ $tone }}" /></svg>{{ $entry->level }}
+                                        </span>
+                                        <span class="time" title="{{ $entry->timestamp }}">
+                                            <svg class="i"><use href="#i-clock" /></svg
+                                            >{{ $entry->getFormattedTimestamp() }}
+                                        </span>
+                                        @if ($entry->environment !== 'production')
+                                            <span class="env">{{ $entry->environment }}</span>
+                                        @endif
+                                    </div>
+
+                                    <div class="entry__message">
+                                        {!! $entry->highlightSearchTerm($entry->message, $logViewer->search()) !!}
+                                    </div>
+
+                                    @if ($entry->hasContext())
+                                        <div class="entry__tags">
+                                            @foreach ($entry->getContext() as $key => $value)
+                                                <span class="tag" title="{{ $key }}: {{ $value }}">
+                                                    <span class="tag__key">{{ $key }}</span>
+                                                    <span class="tag__value">{!! $entry->highlightSearchTerm($value, $logViewer->search()) !!}</span>
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="entry__actions">
+                                    <button
+                                        type="button"
+                                        class="btn btn-ghost"
+                                        data-copy-entry="entry-{{ $index }}"
+                                        title="Copy entry"
+                                    >
+                                        <svg class="i"><use href="#i-copy" /></svg>
+                                    </button>
+                                    <svg class="i caret" aria-hidden="true"><use href="#i-down" /></svg>
+                                </div>
+                            </summary>
+
+                            <div class="detail">
+                                <div class="section">
+                                    <div class="section__head">
+                                        <span class="section__title"><svg class="i"><use href="#i-message" /></svg>Message</span>
+                                        <button
+                                            type="button"
+                                            class="btn btn-copy"
+                                            data-copy="entry-{{ $index }}-message"
+                                        >
+                                            <svg class="i"><use href="#i-copy" /></svg>Copy
+                                        </button>
+                                    </div>
+                                    <pre
+                                        class="code"
+                                        id="entry-{{ $index }}-message"
+                                        data-copy-label="Message"
+                                    >{{ $entry->message }}</pre>
+                                </div>
+
+                                @if ($entry->hasContext())
+                                    <div class="section">
+                                        <div class="section__head">
+                                            <span class="section__title"><svg class="i"><use href="#i-braces" /></svg>Context</span>
+                                            <button
+                                                type="button"
+                                                class="btn btn-copy"
+                                                data-copy="entry-{{ $index }}-context"
+                                            >
+                                                <svg class="i"><use href="#i-copy" /></svg>Copy
+                                            </button>
+                                        </div>
+                                        <pre
+                                            class="code"
+                                            id="entry-{{ $index }}-context"
+                                            data-copy-label="Context"
+                                        >{!! $logViewer->json($entry->getContext()) !!}</pre>
+                                    </div>
+                                @endif
+
+                                @foreach ($entry->getLongContext() as $label => $value)
+                                    <div class="section">
+                                        <div class="section__head">
+                                            <span class="section__title"><svg class="i"><use href="#i-braces" /></svg>{{ $label }}</span>
+                                            <button
+                                                type="button"
+                                                class="btn btn-copy"
+                                                data-copy="entry-{{ $index }}-section-{{ $loop->index }}"
+                                            >
+                                                <svg class="i"><use href="#i-copy" /></svg>Copy
+                                            </button>
+                                        </div>
+                                        @if (is_array($value))
+                                            <pre
+                                                class="code"
+                                                id="entry-{{ $index }}-section-{{ $loop->index }}"
+                                                data-copy-label="{{ $label }}"
+                                            >{!! $logViewer->json($value) !!}</pre>
+                                        @else
+                                            <pre
+                                                class="code"
+                                                id="entry-{{ $index }}-section-{{ $loop->index }}"
+                                                data-copy-label="{{ $label }}"
+                                            >{{ $value }}</pre>
+                                        @endif
+                                    </div>
+                                @endforeach
+
+                                @if ($entry->hasStackTrace())
+                                    <div class="section">
+                                        <div class="section__head">
+                                            <span class="section__title"><svg class="i"><use href="#i-error" /></svg>Stack trace</span>
+                                            <button
+                                                type="button"
+                                                class="btn btn-copy"
+                                                data-copy="entry-{{ $index }}-trace"
+                                            >
+                                                <svg class="i"><use href="#i-copy" /></svg>Copy
+                                            </button>
+                                        </div>
+                                        <pre
+                                            class="code"
+                                            id="entry-{{ $index }}-trace"
+                                            data-copy-label="Stack trace"
+                                        >{!! $logViewer->stackTrace($entry->stackTrace) !!}</pre>
+                                    </div>
+                                @endif
+
+                                @if ($entry->hasExtra())
+                                    <div class="section">
+                                        <div class="section__head">
+                                            <span class="section__title"><svg class="i"><use href="#i-braces" /></svg>Extra</span>
+                                            <button
+                                                type="button"
+                                                class="btn btn-copy"
+                                                data-copy="entry-{{ $index }}-extra"
+                                            >
+                                                <svg class="i"><use href="#i-copy" /></svg>Copy
+                                            </button>
+                                        </div>
+                                        <pre
+                                            class="code"
+                                            id="entry-{{ $index }}-extra"
+                                            data-copy-label="Extra"
+                                        >{{ $entry->extra }}</pre>
+                                    </div>
+                                @endif
+                            </div>
+                        </details>
+                    @empty
+                        @php($empty = $logViewer->emptyState())
+                        <div class="empty">
+                            <span class="empty__icon"
+                                ><svg class="i"><use href="#i-inbox" /></svg
+                            ></span>
+                            <p class="empty__title">{{ $empty['title'] }}</p>
+                            <p>{{ $empty['text'] }}</p>
+                        </div>
+                    @endforelse
                 </div>
+
+                @if ($logViewer->hasPages())
+                    <nav class="pager" aria-label="Pagination">
+                        <span class="pager__text">{{ $logViewer->pageSummary() }}</span>
+                        <div class="pager__actions">
+                            <a
+                                href="{{ $logViewer->previousPageUrl() ?? '#' }}"
+                                class="btn btn-outline"
+                                @if (! $logViewer->previousPageUrl()) aria-disabled="true" tabindex="-1" @endif
+                            >
+                                <svg class="i"><use href="#i-left" /></svg>Newer
+                            </a>
+                            <a
+                                href="{{ $logViewer->nextPageUrl() ?? '#' }}"
+                                class="btn btn-outline"
+                                @if (! $logViewer->nextPageUrl()) aria-disabled="true" tabindex="-1" @endif
+                            >
+                                Older<svg class="i"><use href="#i-right" /></svg>
+                            </a>
+                        </div>
+                    </nav>
                 @endif
+            </main>
 
-                {{-- 4. Extra (raw) --}}
-                @if($entry->hasExtra())
-                <div class="detail-section">
-                    <div class="detail-label">
-                        <span><i class="bi bi-three-dots"></i>Extra</span>
-                        <button class="detail-label-copy" onclick="copyText('extra-{{ $index }}', this)">
-                            <i class="bi bi-clipboard"></i> Copy
-                        </button>
-                    </div>
-                    <pre class="code-block" id="extra-{{ $index }}">{{ $entry->extra }}</pre>
-                </div>
-                @endif
-
-            </div>
-            @endif
-
+            <footer>
+                &copy; {{ date('Y') }} &middot;
+                <a href="https://snawbar.com" target="_blank" rel="noopener">Snawbar</a>
+            </footer>
         </div>
-        @empty
-        <div class="empty">
-            <div class="empty-icon">
-                @if($searchTerm)<i class="bi bi-search"></i>
-                @elseif($currentFile)<i class="bi bi-journal-x"></i>
-                @else<i class="bi bi-journals"></i>
-                @endif
-            </div>
-            @if($searchTerm)
-                <p>No results match your search</p>
-                <small>Try different keywords or clear the filter.</small>
-            @elseif($currentFile)
-                <p>This log file is empty</p>
-                <small>No entries to display.</small>
-            @else
-                <p>Select a log file from the sidebar</p>
-                <small>Pick a file to start viewing log entries.</small>
-            @endif
-        </div>
-        @endforelse
     </div>
-</div>
 
-@php
-function formatStackTrace(string $trace): string {
-    $lines = explode("\n", $trace);
-    $out = '';
-    foreach ($lines as $line) {
-        $esc = htmlspecialchars($line, ENT_QUOTES, 'UTF-8');
-        $trim = ltrim($line);
-        if (str_starts_with($trim, 'Caused by:')) {
-            $out .= '<span class="trace-caused">' . $esc . '</span>';
-        } elseif (preg_match('/^\w[\w\\\\]+(?:Exception|Error)(?:\(code:.+\))?:/', $trim) || str_starts_with($trim, 'Illuminate\\\\') || str_starts_with($trim, 'PDOException')) {
-            $out .= '<span class="trace-exception">' . $esc . '</span>';
-        } elseif (preg_match('/^\s*at /', $line)) {
-            $out .= '<span class="trace-at">' . $esc . '</span>';
-        } elseif (preg_match('/^\s+#\d+/', $line)) {
-            $out .= '<span class="trace-frame">' . $esc . '</span>';
-        } else {
-            $out .= $esc;
-        }
-        $out .= "\n";
-    }
-    return rtrim($out);
-}
+    @if ($logViewer->hasCurrentFile())
+        <dialog class="dialog" id="deleteDialog" aria-labelledby="deleteDialogTitle">
+            <form action="{{ $logViewer->deleteUrl() }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="file" value="{{ $logViewer->currentFile() }}" />
 
-function jsonHighlight(mixed $value, int $depth = 0): string {
-    $ind = str_repeat('  ', $depth);
-    $chi = str_repeat('  ', $depth + 1);
-    $p   = fn(string $s) => '<span class="json-punct">' . htmlspecialchars($s, ENT_QUOTES, 'UTF-8') . '</span>';
+                <div class="dialog__body">
+                    <span class="dialog__icon"
+                        ><svg class="i"><use href="#i-trash" /></svg
+                    ></span>
+                    <div style="min-width: 0">
+                        <h2 class="dialog__title" id="deleteDialogTitle">Delete log file?</h2>
+                        <p class="dialog__text">
+                            <code>{{ $logViewer->currentFile() }}</code> will be permanently removed. This cannot be
+                            undone.
+                        </p>
+                    </div>
+                </div>
 
-    if (is_array($value)) {
-        $list = array_is_list($value);
-        if (empty($value)) return $p($list ? '[]' : '{}');
-        $items = [];
-        foreach ($value as $k => $v) {
-            $keyPart = $list ? '' : '<span class="json-key">' . htmlspecialchars(json_encode($k), ENT_QUOTES, 'UTF-8') . '</span>' . $p(': ');
-            $items[] = $chi . $keyPart . jsonHighlight($v, $depth + 1);
-        }
-        return $p($list ? '[' : '{') . "\n" . implode($p(',') . "\n", $items) . "\n" . $ind . $p($list ? ']' : '}');
-    }
-    if (is_string($value)) {
-        $trimmed = trim($value);
-        if (($trimmed !== '' && ($trimmed[0] === '{' || $trimmed[0] === '['))) {
-            $inner = json_decode($trimmed, true);
-            if (is_array($inner)) {
-                return jsonHighlight($inner, $depth);
-            }
-        }
-        return '<span class="json-str">' . htmlspecialchars(json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') . '</span>';
-    }
-    if (is_int($value) || is_float($value)) {
-        return '<span class="json-num">' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '</span>';
-    }
-    if (is_bool($value)) return '<span class="json-bool">' . ($value ? 'true' : 'false') . '</span>';
-    return '<span class="json-null">null</span>';
-}
-@endphp
+                <div class="dialog__actions">
+                    <button type="button" class="btn btn-outline" data-close-dialog>Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <svg class="i"><use href="#i-trash" /></svg>Delete
+                    </button>
+                </div>
+            </form>
+        </dialog>
+    @endif
 
-<script>
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    const topbar  = document.getElementById('topbar');
+    <script>
+        (() => {
+            const root = document.documentElement;
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('backdrop');
+            const menuButton = document.getElementById('menuButton');
 
-    document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('show');
-    });
-    overlay.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('show');
-    });
-    document.querySelectorAll('.file-item').forEach(a => {
-        a.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('show');
-        });
-    });
+            const setDrawer = (open) => {
+                sidebar.classList.toggle('is-open', open);
+                backdrop.classList.toggle('is-open', open);
+                root.classList.toggle('is-locked', open);
+                menuButton.setAttribute('aria-expanded', String(open));
+            };
 
-    function toggleCard(index, hasDetail) {
-        if (!hasDetail) return;
-        document.getElementById(`card-${index}`).classList.toggle('open');
-    }
+            menuButton.addEventListener('click', () => setDrawer(!sidebar.classList.contains('is-open')));
+            backdrop.addEventListener('click', () => setDrawer(false));
+            window
+                .matchMedia('(min-width: 901px)')
+                .addEventListener('change', (event) => event.matches && setDrawer(false));
 
-    function copyText(id, btn) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        navigator.clipboard.writeText(el.innerText || el.textContent).then(() => flashCopied(btn));
-    }
+            // Keep the active file visible inside the sidebar list.
+            sidebar.querySelector('.file.is-active')?.scrollIntoView({ block: 'nearest' });
 
-    function copyLog(index, btn) {
-        const msg   = document.getElementById(`msg-${index}`)?.innerText ?? '';
-        const trace = document.getElementById(`trace-${index}`)?.innerText ?? '';
-        let text = `MESSAGE:\n${msg}`;
-        if (trace) text += `\n\nSTACK TRACE:\n${trace}`;
-        navigator.clipboard.writeText(text).then(() => flashCopied(btn));
-    }
+            // Copy helpers (clipboard API needs HTTPS, so fall back to execCommand).
+            const writeClipboard = (text) => {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                }
 
-    function flashCopied(btn) {
-        const orig = btn.innerHTML;
-        const hasLabel = btn.querySelector('span') !== null;
-        btn.innerHTML = hasLabel ? '<i class="bi bi-check-lg"></i> <span>Copied</span>' : '<i class="bi bi-check-lg"></i>';
-        btn.classList.add('copied');
-        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
-    }
+                return new Promise((resolve, reject) => {
+                    const area = document.createElement('textarea');
+                    area.value = text;
+                    area.setAttribute('readonly', '');
+                    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+                    document.body.appendChild(area);
+                    area.select();
+                    const copied = document.execCommand('copy');
+                    area.remove();
+                    copied ? resolve() : reject(new Error('Copy failed'));
+                });
+            };
 
-    // Search
-    const searchWrap   = document.getElementById('searchWrap');
-    const searchToggle = document.getElementById('searchToggle');
-    const searchClose  = document.getElementById('searchClose');
-    const searchInput  = document.getElementById('searchInput');
-    const searchForm   = document.getElementById('searchForm');
+            const flashCopied = (button) => {
+                const icon = button.querySelector('use');
+                icon?.setAttribute('href', '#i-check');
+                button.classList.add('is-copied');
+                clearTimeout(button.copyTimer);
+                button.copyTimer = setTimeout(() => {
+                    icon?.setAttribute('href', '#i-copy');
+                    button.classList.remove('is-copied');
+                }, 1500);
+            };
 
-    function isMobile() { return window.matchMedia('(max-width: 768px)').matches; }
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-copy], [data-copy-entry]');
 
-    function expandSearch() {
-        searchWrap?.classList.add('expanded');
-        if (isMobile()) topbar.classList.add('searching');
-        setTimeout(() => searchInput?.focus(), 50);
-    }
+                if (!button) {
+                    return;
+                }
 
-    function closeSearch() {
-        // If a search was active server-side, navigate to clean URL to clear it
-        const had = searchInput && searchInput.defaultValue.trim() !== '';
-        if (searchInput) searchInput.value = '';
-        searchWrap?.classList.remove('expanded');
-        topbar.classList.remove('searching');
-        if (had && searchWrap?.dataset.clearUrl) {
-            window.location.href = searchWrap.dataset.clearUrl;
-        }
-    }
+                // Buttons live inside <summary>; don't toggle the entry.
+                event.preventDefault();
+                event.stopPropagation();
 
-    searchToggle?.addEventListener('click', expandSearch);
-    searchClose?.addEventListener('click', closeSearch);
+                let text = '';
 
-    if (searchInput) {
-        let t;
-        searchInput.addEventListener('input', function () {
-            clearTimeout(t);
-            if (this.value.trim()) t = setTimeout(() => searchForm.submit(), 550);
-        });
-        searchInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); clearTimeout(t); searchForm.submit(); }
-        });
-    }
+                if (button.dataset.copy) {
+                    text = document.getElementById(button.dataset.copy)?.textContent ?? '';
+                } else {
+                    const entry = document.getElementById(button.dataset.copyEntry);
+                    const meta = entry?.querySelector('.entry__meta')?.innerText.replace(/\s+/g, ' ').trim() ?? '';
 
-    // Auto-expand if search active on load (mobile too)
-    if (searchInput && searchInput.value.trim()) {
-        if (isMobile()) topbar.classList.add('searching');
-    }
+                    text = [
+                        meta,
+                        ...Array.from(entry?.querySelectorAll('[data-copy-label]') ?? []).map(
+                            (block) => `${block.dataset.copyLabel.toUpperCase()}:\n${block.textContent}`,
+                        ),
+                    ].join('\n\n');
+                }
 
-    // delete confirm
-    document.querySelectorAll('.delete-form').forEach(form => {
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const name = this.dataset.filename;
-            Swal.fire({
-                title: 'Delete log file?',
-                html: `<code style="font-size:.85rem;color:#fca5a5">${name}</code>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#fca5a5',
-                cancelButtonColor: '#505868',
-                confirmButtonText: 'Delete',
-                background: '#343a47',
-                color: '#e4e7ee',
-            }).then(r => { if (r.isConfirmed) this.submit(); });
-        });
-    });
-</script>
+                writeClipboard(text)
+                    .then(() => flashCopied(button))
+                    .catch(() => {});
+            });
+
+            // Search: "/" focuses the box, Escape leaves it.
+            const searchInput = document.getElementById('searchInput');
+
+            document.addEventListener('keydown', (event) => {
+                const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName ?? '');
+
+                if (event.key === '/' && !typing && searchInput) {
+                    event.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                } else if (event.key === 'Escape') {
+                    if (document.activeElement === searchInput) {
+                        searchInput.blur();
+                    }
+
+                    setDrawer(false);
+                }
+            });
+
+            // Delete confirmation.
+            const deleteDialog = document.getElementById('deleteDialog');
+
+            document.getElementById('deleteButton')?.addEventListener('click', () => {
+                if (typeof deleteDialog?.showModal === 'function') {
+                    deleteDialog.showModal();
+                } else if (confirm('Delete this log file? This cannot be undone.')) {
+                    deleteDialog?.querySelector('form')?.submit();
+                }
+            });
+
+            deleteDialog?.querySelector('[data-close-dialog]')?.addEventListener('click', () => deleteDialog.close());
+            deleteDialog?.addEventListener('click', (event) => event.target === deleteDialog && deleteDialog.close());
+        })();
+    </script>
 </body>
 </html>

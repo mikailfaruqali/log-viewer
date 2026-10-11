@@ -4,13 +4,14 @@
 [![PHP Version](https://img.shields.io/badge/PHP-%5E8.3-blue.svg)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-11%2B-red.svg)](https://laravel.com)
 
-A modern, elegant, and feature-rich log viewer for Laravel applications. Experience a beautiful glassmorphism-inspired interface that makes viewing and managing your application logs both intuitive and visually appealing.
+A modern, elegant, and feature-rich log viewer for Laravel applications. Experience a clean, light interface that makes viewing and managing your application logs both intuitive and visually appealing.
 
 ## ✨ Features
 
 ### 🎨 **Modern UI/UX**
-- **Glassmorphism Design**: Beautiful translucent interface with backdrop blur effects
-- **Dark Theme**: Eye-friendly dark interface perfect for development environments
+- **Clean Light Design**: Matches the Snawbar Suite / Health look (zinc palette, Geist fonts)
+- **Level Filters & Pagination**: Filter by errors, warnings, info or debug and page through large files
+- **Shared Context**: Shows `Log::shareContext()` and `Context::add()` data alongside each entry
 - **Responsive Layout**: Fully responsive design that works on desktop, tablet, and mobile
 - **Smooth Animations**: CSS transitions and hover effects for enhanced user experience
 - **Mobile-First**: Collapsible sidebar and touch-friendly interactions on mobile devices
@@ -108,6 +109,9 @@ return [
     |
     */
     'middleware' => ['web', 'auth'],
+
+    // Log entries rendered per page
+    'per-page' => 50,
 ];
 ```
 
